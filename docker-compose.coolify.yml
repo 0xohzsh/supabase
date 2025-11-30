@@ -55,16 +55,6 @@ services:
     container_name: supabase-kong
     image: kong:2.8.1
     restart: unless-stopped
-    # Traefik labels for Coolify - this is the main entry point
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.supabase.rule=Host(`${SERVICE_FQDN_KONG}`)"
-      - "traefik.http.routers.supabase.entrypoints=http"
-      - "traefik.http.services.supabase.loadbalancer.server.port=8000"
-      # WebSocket support for Realtime
-      - "traefik.http.middlewares.supabase-headers.headers.customrequestheaders.Upgrade=websocket"
-      - "traefik.http.middlewares.supabase-headers.headers.customrequestheaders.Connection=Upgrade"
-      - "traefik.http.routers.supabase.middlewares=supabase-headers"
     volumes:
       - ./volumes/api/kong.yml:/home/kong/temp.yml:ro
     depends_on:
@@ -389,10 +379,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    # Vector is optional - remove dependency to allow db to start without it
-    # depends_on:
-    #   vector:
-    #     condition: service_healthy
+    depends_on:
+      vector:
+        condition: service_healthy
     environment:
       POSTGRES_HOST: /var/run/postgresql
       PGPORT: ${POSTGRES_PORT}
@@ -413,18 +402,14 @@ services:
       ]
     # NO external ports - internal only, access via supavisor for pooled connections
 
-  # Vector is OPTIONAL - provides log aggregation for Studio
-  # If it fails to start, logs won't appear in Studio but everything else works
-  # Common issues: Docker socket not accessible, config file not found
+  # Vector provides log aggregation for Studio - OPTIONAL
+  # Requires Docker socket access which may not work in all environments
   vector:
     container_name: supabase-vector
     image: timberio/vector:0.28.1-alpine
     restart: unless-stopped
-    profiles:
-      - logging # Only starts when explicitly enabled with --profile logging
     volumes:
       - ./volumes/logs/vector.yml:/etc/vector/vector.yml:ro
-      # Docker socket - required for log collection
       - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
       test:
@@ -449,10 +434,6 @@ services:
     container_name: supabase-pooler
     image: supabase/supavisor:2.7.4
     restart: unless-stopped
-    # Only expose pooler port if you need external DB access (e.g., pgAdmin)
-    # Otherwise, keep commented out for internal-only access
-    # ports:
-    #   - ${POOLER_PROXY_PORT_TRANSACTION}:6543
     volumes:
       - ./volumes/pooler/pooler.exs:/etc/pooler/pooler.exs:ro
     healthcheck:
