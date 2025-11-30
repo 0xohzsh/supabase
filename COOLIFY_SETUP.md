@@ -10,11 +10,11 @@ This guide covers deploying Supabase using Coolify v4.
 
 ## Files Overview
 
-| File | Purpose |
-|------|---------|
-| `docker-compose.coolify.yml` | Adapted compose file for Coolify |
-| `env.prod` | Environment variables |
-| `volumes/` | Configuration files mounted into containers |
+| File                         | Purpose                                     |
+| ---------------------------- | ------------------------------------------- |
+| `docker-compose.coolify.yml` | Adapted compose file for Coolify            |
+| `.env.prod`                  | Environment variables                       |
+| `volumes/`                   | Configuration files mounted into containers |
 
 ## Quick Start
 
@@ -28,6 +28,7 @@ This guide covers deploying Supabase using Coolify v4.
 ### 2. Configure Environment Variables
 
 In Coolify's environment variables section, either:
+
 - **Option A**: Copy all contents from `env.prod`
 - **Option B**: Use Coolify's "Import from .env" feature with `env.prod`
 
@@ -59,6 +60,7 @@ SMTP_ADMIN_EMAIL=admin@yourdomain.com
 In Coolify, set the domain for your application to match `SERVICE_FQDN_KONG`.
 
 The Kong service has Traefik labels that will:
+
 - Route all traffic to Kong on port 8000
 - Handle WebSocket connections for Realtime
 
@@ -93,18 +95,19 @@ Click **Deploy** in Coolify and wait for all services to become healthy.
 
 After deployment, your Supabase instance will be available at:
 
-| Endpoint | URL | Purpose |
-|----------|-----|---------|
-| Dashboard | `https://your-domain.com/` | Studio UI |
-| Auth API | `https://your-domain.com/auth/v1/` | Authentication |
-| REST API | `https://your-domain.com/rest/v1/` | Database REST API |
-| Realtime | `wss://your-domain.com/realtime/v1/` | WebSocket subscriptions |
-| Storage | `https://your-domain.com/storage/v1/` | File storage |
-| Functions | `https://your-domain.com/functions/v1/` | Edge Functions |
+| Endpoint  | URL                                     | Purpose                 |
+| --------- | --------------------------------------- | ----------------------- |
+| Dashboard | `https://your-domain.com/`              | Studio UI               |
+| Auth API  | `https://your-domain.com/auth/v1/`      | Authentication          |
+| REST API  | `https://your-domain.com/rest/v1/`      | Database REST API       |
+| Realtime  | `wss://your-domain.com/realtime/v1/`    | WebSocket subscriptions |
+| Storage   | `https://your-domain.com/storage/v1/`   | File storage            |
+| Functions | `https://your-domain.com/functions/v1/` | Edge Functions          |
 
 ## Dashboard Login
 
 The Studio dashboard is protected with Basic Auth:
+
 - **Username**: Value of `DASHBOARD_USERNAME`
 - **Password**: Value of `DASHBOARD_PASSWORD`
 
@@ -114,12 +117,12 @@ Use these values in your application:
 
 ```javascript
 // JavaScript/TypeScript
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
-  'https://your-domain.com',  // SUPABASE_PUBLIC_URL
-  'your-anon-key'             // ANON_KEY from env.prod
-)
+  "https://your-domain.com", // SUPABASE_PUBLIC_URL
+  "your-anon-key" // ANON_KEY from env.prod
+);
 ```
 
 ```dart
@@ -137,6 +140,7 @@ await Supabase.initialize(
 ### 1. Services Not Starting
 
 Check the startup order. Services have health check dependencies:
+
 ```
 vector → db → analytics → kong → studio
                        → auth
@@ -150,6 +154,7 @@ vector → db → analytics → kong → studio
 ### 2. Logs Not Appearing in Studio
 
 The Vector service requires Docker socket access to collect logs. If Coolify restricts this:
+
 - Logs won't appear in Studio's Log Explorer
 - All other features will work normally
 - Consider using Coolify's built-in log viewer instead
@@ -157,12 +162,14 @@ The Vector service requires Docker socket access to collect logs. If Coolify res
 ### 3. WebSocket/Realtime Not Working
 
 Ensure Traefik is configured for WebSocket:
+
 - The Kong service includes WebSocket middleware headers
 - Check that your domain supports WebSocket connections
 
 ### 4. Database Connection Issues
 
 If services can't connect to the database:
+
 1. Check `POSTGRES_HOST=supabase-db` is correct
 2. Verify `POSTGRES_PASSWORD` matches across all services
 3. Wait for db health check to pass before other services start
@@ -170,6 +177,7 @@ If services can't connect to the database:
 ### 5. Storage/MinIO Issues
 
 MinIO runs internally. If you need external access to MinIO console:
+
 1. Uncomment the ports in `docker-compose.coolify.yml`
 2. Configure additional Traefik routing for MinIO
 
@@ -177,12 +185,12 @@ MinIO runs internally. If you need external access to MinIO console:
 
 The following data is persisted:
 
-| Volume | Data |
-|--------|------|
-| `db-data` | PostgreSQL database |
-| `db-config` | PostgreSQL configuration |
-| `minio-data` | Uploaded files |
-| `storage-data` | Storage API cache |
+| Volume         | Data                     |
+| -------------- | ------------------------ |
+| `db-data`      | PostgreSQL database      |
+| `db-config`    | PostgreSQL configuration |
+| `minio-data`   | Uploaded files           |
+| `storage-data` | Storage API cache        |
 
 ## Security Checklist
 
@@ -215,4 +223,3 @@ openssl rand -base64 32
 - [Supabase Self-Hosting Docs](https://supabase.com/docs/guides/self-hosting)
 - [Coolify Documentation](https://coolify.io/docs)
 - [Supabase GitHub Issues](https://github.com/supabase/supabase/issues)
-
